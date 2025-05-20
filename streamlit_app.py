@@ -4,8 +4,6 @@ import pandas as pd
 import numpy as np
 import time
 import datetime
-import plotly.graph_objects as go
-from plotly.subplots import make_subplots
 import warnings
 warnings.filterwarnings('ignore')
 
@@ -28,11 +26,12 @@ st.markdown("""
     }
     
     .main {
-        background-color: #F8F9FA;
+        background-color: #1E1E2E;
+        color: white;
     }
     
     h1, h2, h3 {
-        color: #8C52FF;
+        color: white;
     }
     
     .stButton>button {
@@ -49,65 +48,112 @@ st.markdown("""
         transform: translateY(-2px);
     }
     
-    .card {
-        background-color: white;
-        border-radius: 8px;
+    /* Professional table styling */
+    .signal-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        border-radius: 10px;
+        overflow: hidden;
+        margin-bottom: 20px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        padding: 1.5rem;
-        margin-bottom: 1rem;
     }
     
-    .confidence-range {
-        display: inline-block;
-        padding: 5px 10px;
-        border-radius: 4px;
+    .signal-table th {
+        background-color: #2A2A3C;
         color: white;
+        padding: 12px 15px;
+        text-align: center;
+        font-weight: bold;
+        border-bottom: 2px solid #3A3A4C;
+    }
+    
+    .signal-table td {
+        padding: 10px 15px;
+        text-align: center;
+        border-bottom: 1px solid #3A3A4C;
+    }
+    
+    .signal-table tr {
+        background-color: #2A2A3C;
+    }
+    
+    .signal-table tr:hover {
+        background-color: #3A3A4C;
+    }
+    
+    .signal-table tr:last-child td {
+        border-bottom: none;
+    }
+    
+    /* Signal type styling */
+    .signal-buy {
+        background-color: #52FF7D;
+        color: #1E1E2E;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .signal-sell {
+        background-color: #FF5252;
+        color: #1E1E2E;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    .signal-neutral {
+        background-color: #CCCCCC;
+        color: #1E1E2E;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    /* Timeframe badge */
+    .timeframe-badge {
+        background-color: #3A3A4C;
+        color: white;
+        padding: 3px 8px;
+        border-radius: 5px;
+        display: inline-block;
+        margin-right: 5px;
+    }
+    
+    /* Confidence badge */
+    .confidence-badge {
+        color: white;
+        padding: 3px 8px;
+        border-radius: 5px;
+        font-weight: bold;
+        display: inline-block;
+    }
+    
+    /* Profit and loss values */
+    .profit-value {
+        color: #52FF7D;
         font-weight: bold;
     }
     
-    /* Confidence range colors */
-    .range-95-100 { background-color: #8C52FF; }
-    .range-90-94 { background-color: #5271FF; }
-    .range-85-89 { background-color: #52B5FF; }
-    .range-80-84 { background-color: #52FFD0; }
-    .range-75-79 { background-color: #52FF7D; }
-    .range-70-74 { background-color: #9DFF52; }
-    .range-65-69 { background-color: #D6FF52; }
-    .range-60-64 { background-color: #FFE252; }
-    .range-55-59 { background-color: #FFBD52; }
-    .range-50-54 { background-color: #FF8652; }
-    .range-45-49 { background-color: #FF5252; }
-    
-    /* Alert styles */
-    .alert {
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-        border-right: 4px solid;
+    .loss-value {
+        color: #FF5252;
+        font-weight: bold;
     }
     
-    .alert-info {
-        background-color: #e3f2fd;
-        border-color: #52B5FF;
-        color: #0c5460;
+    /* Last update indicator */
+    .last-update {
+        text-align: center;
+        color: #AAAAAA;
+        margin-bottom: 15px;
     }
     
-    .alert-success {
-        background-color: #d4edda;
-        border-color: #52FF7D;
-        color: #155724;
-    }
-    
-    .alert-warning {
-        background-color: #fff3cd;
-        border-color: #FFE252;
-        color: #856404;
-    }
-    
-    .alert-danger {
-        background-color: #f8d7da;
-        border-color: #FF5252;
-        color: #721c24;
+    /* Sidebar styling */
+    .sidebar .sidebar-content {
+        background-color: #2A2A3C;
     }
     
     /* Fix for RTL in dataframes */
@@ -115,9 +161,25 @@ st.markdown("""
         direction: rtl;
     }
     
-    /* Fix for plotly charts */
-    .js-plotly-plot {
-        direction: ltr;
+    /* Section headers */
+    .section-header {
+        background-color: #3A3A4C;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+        text-align: center;
+    }
+    
+    /* Symbol column styling */
+    .symbol-column {
+        font-weight: bold;
+        font-size: 1.1em;
+    }
+    
+    /* Price column styling */
+    .price-column {
+        font-family: monospace;
+        font-size: 1.1em;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -147,9 +209,9 @@ symbols = {
 
 # Timeframes for analysis
 timeframes = {
-    '1 دقيقة': '1m',
-    '5 دقائق': '5m',
-    '15 دقيقة': '15m'
+    '1م': '1m',
+    '5م': '5m',
+    '15م': '15m'
 }
 
 # Confidence range mapping
@@ -177,11 +239,27 @@ def get_confidence_range(confidence):
         return "50-54%", '#FF8652'  # Light Orange
     elif confidence >= 45:
         return "45-49%", '#FF5252'  # Red
+    elif confidence >= 40:
+        return "40-44%", '#FF527A'  # Pink
+    elif confidence >= 35:
+        return "35-39%", '#FF52B5'  # Hot Pink
+    elif confidence >= 30:
+        return "30-34%", '#D052FF'  # Purple
+    elif confidence >= 25:
+        return "25-29%", '#8952FF'  # Violet
+    elif confidence >= 20:
+        return "20-24%", '#5257FF'  # Blue
+    elif confidence >= 15:
+        return "15-19%", '#52BDFF'  # Light Blue
+    elif confidence >= 10:
+        return "10-14%", '#52FFE2'  # Aqua
+    elif confidence >= 5:
+        return "5-9%", '#52FF94'  # Light Green
     else:
-        return "أقل من 45%", '#CCCCCC'  # Gray
+        return "0-4%", '#CCCCCC'  # Gray
 
 # Data fetching function with error handling and retries
-@st.cache_data(ttl=300)  # Cache for 5 minutes
+@st.cache_data(ttl=60)  # Cache for 60 seconds
 def fetch_data(symbol, period='1d', interval='5m', retries=3):
     """
     Fetch market data with retry mechanism
@@ -664,6 +742,8 @@ class ScalpingSignalGenerator:
             risk_reward = round(reward / risk, 2)
         
         return {
+            'symbol': symbol_name,
+            'timeframe': timeframe,
             'signal': signal,
             'entry_price': entry_price,
             'take_profit': tp,
@@ -671,114 +751,48 @@ class ScalpingSignalGenerator:
             'description': description,
             'confidence': confidence,
             'pips_potential': pips_potential,
-            'risk_reward': risk_reward
+            'risk_reward': risk_reward,
+            'current_price': current_price
         }
 
-# Function to plot chart
-def plot_chart(df, symbol_name, timeframe):
-    # Create figure with secondary y-axis
-    fig = make_subplots(rows=2, cols=1, shared_xaxes=True, 
-                        vertical_spacing=0.03, 
-                        row_heights=[0.7, 0.3],
-                        subplot_titles=(f"{symbol_name} - {timeframe}", "حجم التداول"))
-    
-    # Add candlestick chart
-    fig.add_trace(go.Candlestick(
-        x=df.index,
-        open=df['Open'],
-        high=df['High'],
-        low=df['Low'],
-        close=df['Close'],
-        name="شموع السعر",
-        increasing_line_color='#52FF7D',
-        decreasing_line_color='#FF5252'
-    ), row=1, col=1)
-    
-    # Add EMA indicators
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['EMA_8'],
-        name="EMA 8",
-        line=dict(color='#5271FF', width=1)
-    ), row=1, col=1)
-    
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['EMA_21'],
-        name="EMA 21",
-        line=dict(color='#FF8652', width=1)
-    ), row=1, col=1)
-    
-    # Add Bollinger Bands
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['Upper_Band'],
-        name="البولنجر العلوي",
-        line=dict(color='#D6FF52', width=1, dash='dash')
-    ), row=1, col=1)
-    
-    fig.add_trace(go.Scatter(
-        x=df.index,
-        y=df['Lower_Band'],
-        name="البولنجر السفلي",
-        line=dict(color='#D6FF52', width=1, dash='dash')
-    ), row=1, col=1)
-    
-    # Add volume bars
-    colors = ['#52FF7D' if row['Close'] >= row['Open'] else '#FF5252' for _, row in df.iterrows()]
-    
-    fig.add_trace(go.Bar(
-        x=df.index,
-        y=df['Volume'],
-        name="الحجم",
-        marker_color=colors
-    ), row=2, col=1)
-    
-    # Update layout
-    fig.update_layout(
-        title=f"تحليل {symbol_name} على الإطار الزمني {timeframe}",
-        xaxis_title="التاريخ",
-        yaxis_title="السعر",
-        xaxis_rangeslider_visible=False,
-        template="plotly_white",
-        height=600,
-        legend=dict(
-            orientation="h",
-            yanchor="bottom",
-            y=1.02,
-            xanchor="right",
-            x=1
-        )
-    )
-    
-    # Update y-axis labels
-    fig.update_yaxes(title_text="السعر", row=1, col=1)
-    fig.update_yaxes(title_text="الحجم", row=2, col=1)
-    
-    return fig
+# Initialize session state for auto-refresh
+if 'auto_refresh' not in st.session_state:
+    st.session_state.auto_refresh = True
+
+if 'last_update' not in st.session_state:
+    st.session_state.last_update = datetime.datetime.now()
+
+# Initialize session state for timeframe selection
+if 'global_timeframe' not in st.session_state:
+    st.session_state.global_timeframe = '1م'
 
 # Main app layout
 def main():
     # Header
     st.title("مؤشر سكالبينج متطور")
-    st.markdown('<div class="alert alert-info">أداة قوية للتداول في الأسواق المالية المتعددة</div>', unsafe_allow_html=True)
     
     # Sidebar
     st.sidebar.title("الإعدادات")
     
-    # Symbol selection
-    symbol_name = st.sidebar.selectbox(
-        "اختر الرمز",
-        list(symbols.keys())
+    # Global timeframe selection
+    st.sidebar.subheader("الإطار الزمني")
+    global_timeframe = st.sidebar.selectbox(
+        "اختر الإطار الزمني لجميع الأزواج",
+        list(timeframes.keys()),
+        index=list(timeframes.keys()).index(st.session_state.global_timeframe)
     )
+    st.session_state.global_timeframe = global_timeframe
     
-    # Timeframe selection
-    timeframe_name = st.sidebar.selectbox(
-        "اختر الإطار الزمني",
-        list(timeframes.keys())
+    # Symbol selection (multi-select)
+    st.sidebar.subheader("الأزواج")
+    selected_symbols = st.sidebar.multiselect(
+        "اختر الأزواج",
+        list(symbols.keys()),
+        default=["EUR/USD", "GBP/USD", "USD/JPY", "XAU/USD"]
     )
     
     # Period selection
+    st.sidebar.subheader("الفترة الزمنية")
     period = st.sidebar.selectbox(
         "اختر الفترة الزمنية",
         ["1 يوم", "5 أيام", "1 أسبوع", "1 شهر"],
@@ -793,19 +807,25 @@ def main():
         "1 شهر": "1mo"
     }
     
-    # Add analyze button
-    analyze_button = st.sidebar.button("تحليل السوق", key="analyze")
+    # Show only best opportunities option
+    st.sidebar.subheader("خيارات العرض")
+    show_best_only = st.sidebar.checkbox("عرض أفضل الفرص فقط", value=False)
+    
+    # Auto-refresh toggle
+    st.sidebar.subheader("التحديث التلقائي")
+    auto_refresh = st.sidebar.checkbox("تفعيل التحديث التلقائي كل 60 ثانية", value=st.session_state.auto_refresh)
+    st.session_state.auto_refresh = auto_refresh
     
     # Show usage guide in sidebar
     with st.sidebar.expander("عرض دليل الاستخدام", expanded=False):
         st.markdown("""
         ### كيفية استخدام المؤشر
         
-        1. **اختر الرمز** من القائمة المنسدلة
-        2. **حدد الإطار الزمني** المناسب لاستراتيجيتك
-        3. **اختر الفترة الزمنية** للتحليل
-        4. انقر على زر **تحليل السوق**
-        5. راجع النتائج والإشارات في الصفحة الرئيسية
+        1. **اختر الإطار الزمني** الذي ترغب في استخدامه لجميع الأزواج
+        2. **اختر الأزواج** التي ترغب في تحليلها
+        3. **حدد الفترة الزمنية** للبيانات التاريخية
+        4. **اختر خيارات العرض** حسب تفضيلاتك
+        5. **فعّل/أوقف التحديث التلقائي** حسب الحاجة
         
         ### فهم نطاقات الثقة
         
@@ -814,21 +834,28 @@ def main():
         * **75-79%**: ثقة جيدة، إشارة مناسبة
         * **60-64%**: ثقة متوسطة، تحتاج لتأكيد إضافي
         * **أقل من 50%**: ثقة منخفضة، يفضل تجنبها
-        
-        ### الأسواق المدعومة
-        
-        * **الفوركس**: EUR/USD, GBP/USD, USD/JPY, AUD/USD
-        * **السلع**: XAU/USD (الذهب), XAG/USD (الفضة), OIL/USD (النفط)
-        * **العملات الرقمية**: BTC/USD, ETH/USD
-        * **المؤشرات**: NAS100, S&P500, DOW
         """)
     
     # Main content
-    if analyze_button:
-        with st.spinner('جاري تحليل البيانات...'):
+    if not selected_symbols:
+        st.warning("الرجاء اختيار زوج واحد على الأقل للتحليل")
+    else:
+        # Initialize signal generator
+        signal_gen = ScalpingSignalGenerator()
+        
+        # Last update indicator
+        current_time = datetime.datetime.now()
+        st.session_state.last_update = current_time
+        st.markdown(f'<div class="last-update">آخر تحديث: {current_time.strftime("%Y-%m-%d %H:%M:%S")}</div>', unsafe_allow_html=True)
+        
+        # Store results for sorting
+        all_results = []
+        
+        # Process each selected symbol
+        for symbol_name in selected_symbols:
             # Fetch data
             symbol_code = symbols[symbol_name]
-            timeframe_code = timeframes[timeframe_name]
+            timeframe_code = timeframes[global_timeframe]
             period_code = period_map[period]
             
             df, error = fetch_data(symbol_code, period_code, timeframe_code)
@@ -836,138 +863,117 @@ def main():
             if error:
                 st.error(error)
             else:
-                # Initialize signal generator
-                signal_gen = ScalpingSignalGenerator()
-                
-                # Add indicators for chart
-                ti = TechnicalIndicators()
-                df['EMA_8'] = ti.ema(df, 8)
-                df['EMA_21'] = ti.ema(df, 21)
-                df['Upper_Band'], df['Middle_Band'], df['Lower_Band'] = ti.bollinger_bands(df)
-                
                 # Generate signal
-                result = signal_gen.analyze_timeframe(df, timeframe_name, symbol_name)
+                result = signal_gen.analyze_timeframe(df, global_timeframe, symbol_name)
+                all_results.append(result)
+        
+        # Filter results if show_best_only is checked
+        if show_best_only:
+            display_results = [r for r in all_results if r['signal'] != "لا توجد إشارة"]
+        else:
+            display_results = all_results
+        
+        # Sort results by confidence
+        display_results = sorted(display_results, key=lambda x: x['confidence'], reverse=True)
+        
+        # Display results in a professional table
+        if display_results:
+            st.markdown('<div class="section-header"><h2>إشارات التداول</h2></div>', unsafe_allow_html=True)
+            
+            # Create DataFrame for display
+            data = []
+            for result in display_results:
+                # Signal class and HTML
+                if result['signal'] == "شراء":
+                    signal_html = f'<span class="signal-buy">{result["signal"]}</span> <span class="timeframe-badge">{result["timeframe"]}</span>'
+                elif result['signal'] == "بيع":
+                    signal_html = f'<span class="signal-sell">{result["signal"]}</span> <span class="timeframe-badge">{result["timeframe"]}</span>'
+                else:
+                    signal_html = f'<span class="signal-neutral">{result["signal"]}</span> <span class="timeframe-badge">{result["timeframe"]}</span>'
                 
-                # Display chart
-                fig = plot_chart(df, symbol_name, timeframe_name)
-                st.plotly_chart(fig, use_container_width=True)
+                # Confidence range and color
+                confidence_range, confidence_color = get_confidence_range(result['confidence'])
+                confidence_html = f'<span class="confidence-badge" style="background-color:{confidence_color}">{confidence_range}</span>'
                 
-                # Display signal results
-                st.subheader("نتائج التحليل")
+                # Format values
+                entry_price = f"{result['entry_price']:.5f}" if result['entry_price'] is not None else "-"
+                take_profit = f'<span class="profit-value">{result["take_profit"]:.5f}</span>' if result['take_profit'] is not None else "-"
+                stop_loss = f'<span class="loss-value">{result["stop_loss"]:.5f}</span>' if result['stop_loss'] is not None else "-"
+                pips_potential = f'<span class="profit-value">{result["pips_potential"]}</span>' if result['pips_potential'] != 0 else "-"
+                risk_reward = f"{result['risk_reward']}" if result['risk_reward'] != 0 else "-"
                 
-                # Create columns for signal display
-                col1, col2 = st.columns(2)
+                data.append({
+                    "الزوج": f'<span class="symbol-column">{result["symbol"]}</span>',
+                    "السعر الحالي": f'<span class="price-column">{result["current_price"]:.5f}</span>',
+                    "الإشارة": signal_html,
+                    "نسبة الثقة": confidence_html,
+                    "سعر الدخول": entry_price,
+                    "هدف الربح": take_profit,
+                    "وقف الخسارة": stop_loss,
+                    "النقاط المحتملة": pips_potential,
+                    "نسبة المخاطرة/المكافأة": risk_reward
+                })
+            
+            # Convert to DataFrame
+            df_display = pd.DataFrame(data)
+            
+            # Display as HTML table
+            st.write(df_display.to_html(escape=False, index=False), unsafe_allow_html=True)
+            
+            # Display best opportunities section
+            valid_results = [r for r in all_results if r['signal'] != "لا توجد إشارة"]
+            if valid_results:
+                st.markdown('<div class="section-header"><h2>أفضل الفرص</h2></div>', unsafe_allow_html=True)
                 
-                with col1:
-                    st.markdown('<div class="card">', unsafe_allow_html=True)
-                    
-                    # Signal type with color
+                # Sort by confidence
+                best_results = sorted(valid_results, key=lambda x: x['confidence'], reverse=True)[:3]  # Top 3
+                
+                # Create DataFrame for best opportunities
+                best_data = []
+                for result in best_results:
+                    # Signal class and HTML
                     if result['signal'] == "شراء":
-                        st.markdown(f'<h3 style="color:#52FF7D;">إشارة {result["signal"]}</h3>', unsafe_allow_html=True)
-                    elif result['signal'] == "بيع":
-                        st.markdown(f'<h3 style="color:#FF5252;">إشارة {result["signal"]}</h3>', unsafe_allow_html=True)
+                        signal_html = f'<span class="signal-buy">{result["signal"]}</span> <span class="timeframe-badge">{result["timeframe"]}</span>'
                     else:
-                        st.markdown(f'<h3 style="color:#CCCCCC;">{result["signal"]}</h3>', unsafe_allow_html=True)
+                        signal_html = f'<span class="signal-sell">{result["signal"]}</span> <span class="timeframe-badge">{result["timeframe"]}</span>'
                     
-                    # Only show details if there's a signal
-                    if result['signal'] != "لا توجد إشارة":
-                        # Confidence level
-                        confidence_range, color = get_confidence_range(result['confidence'])
-                        st.markdown(f'<p>مستوى الثقة: <span class="confidence-range" style="background-color:{color};">{confidence_range}</span> ({result["confidence"]}%)</p>', unsafe_allow_html=True)
-                        
-                        # Entry, TP, SL
-                        st.markdown(f'<p>سعر الدخول: <strong>{result["entry_price"]:.4f}</strong></p>', unsafe_allow_html=True)
-                        st.markdown(f'<p>مستوى جني الأرباح: <strong>{result["take_profit"]:.4f}</strong></p>', unsafe_allow_html=True)
-                        st.markdown(f'<p>مستوى وقف الخسارة: <strong>{result["stop_loss"]:.4f}</strong></p>', unsafe_allow_html=True)
+                    # Confidence range and color
+                    confidence_range, confidence_color = get_confidence_range(result['confidence'])
+                    confidence_html = f'<span class="confidence-badge" style="background-color:{confidence_color}">{confidence_range}</span>'
                     
-                    st.markdown('</div>', unsafe_allow_html=True)
+                    # Format values
+                    entry_price = f"{result['entry_price']:.5f}" if result['entry_price'] is not None else "-"
+                    take_profit = f'<span class="profit-value">{result["take_profit"]:.5f}</span>' if result['take_profit'] is not None else "-"
+                    stop_loss = f'<span class="loss-value">{result["stop_loss"]:.5f}</span>' if result['stop_loss'] is not None else "-"
+                    pips_potential = f'<span class="profit-value">{result["pips_potential"]}</span>' if result['pips_potential'] != 0 else "-"
+                    risk_reward = f"{result['risk_reward']}" if result['risk_reward'] != 0 else "-"
+                    
+                    best_data.append({
+                        "الزوج": f'<span class="symbol-column">{result["symbol"]}</span>',
+                        "السعر الحالي": f'<span class="price-column">{result["current_price"]:.5f}</span>',
+                        "الإشارة": signal_html,
+                        "نسبة الثقة": confidence_html,
+                        "سعر الدخول": entry_price,
+                        "هدف الربح": take_profit,
+                        "وقف الخسارة": stop_loss,
+                        "النقاط المحتملة": pips_potential,
+                        "نسبة المخاطرة/المكافأة": risk_reward
+                    })
                 
-                with col2:
-                    st.markdown('<div class="card">', unsafe_allow_html=True)
-                    
-                    # Only show details if there's a signal
-                    if result['signal'] != "لا توجد إشارة":
-                        # Description
-                        st.markdown(f'<p><strong>وصف الإشارة:</strong> {result["description"]}</p>', unsafe_allow_html=True)
-                        
-                        # Pips potential
-                        if 'BTC' in symbol_name or 'ETH' in symbol_name or 'NAS100' in symbol_name or 'S&P500' in symbol_name or 'DOW' in symbol_name:
-                            st.markdown(f'<p>العائد المحتمل: <strong>{result["pips_potential"]}%</strong></p>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<p>النقاط المحتملة: <strong>{result["pips_potential"]}</strong></p>', unsafe_allow_html=True)
-                        
-                        # Risk-reward ratio
-                        st.markdown(f'<p>نسبة المخاطرة إلى العائد: <strong>1:{result["risk_reward"]}</strong></p>', unsafe_allow_html=True)
-                        
-                        # Current time
-                        current_time = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                        st.markdown(f'<p>وقت التحليل: {current_time}</p>', unsafe_allow_html=True)
-                    else:
-                        st.markdown('<p>لا توجد إشارة تداول في الوقت الحالي. حاول اختيار رمز آخر أو إطار زمني مختلف.</p>', unsafe_allow_html=True)
-                    
-                    st.markdown('</div>', unsafe_allow_html=True)
+                # Convert to DataFrame
+                df_best = pd.DataFrame(best_data)
                 
-                # Display market data
-                st.subheader("بيانات السوق")
-                st.dataframe(df.tail(10).sort_index(ascending=False))
-    else:
-        # Welcome message when app first loads
-        st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.markdown("""
-        ## مرحباً بك في مؤشر سكالبينج متطور
+                # Display as HTML table
+                st.write(df_best.to_html(escape=False, index=False), unsafe_allow_html=True)
+            else:
+                st.info("لا توجد إشارات صالحة حالياً")
+        else:
+            st.info("لا توجد نتائج للعرض. حاول تغيير الإعدادات أو إضافة المزيد من الأزواج.")
         
-        هذا المؤشر يوفر إشارات تداول دقيقة للسكالبينج في أسواق متعددة مع دعم لإطارات زمنية متعددة.
-        
-        ### المميزات الرئيسية:
-        
-        * تحليل متعدد الإطارات الزمنية (1 دقيقة، 5 دقائق، 15 دقيقة)
-        * مؤشرات فنية متعددة (EMA, RSI, Bollinger Bands)
-        * تحليل أنماط الشموع اليابانية
-        * تحليل الحجم
-        * كشف مستويات الدعم والمقاومة
-        * عرض نطاق الثقة في الإشارات
-        * حساب النقاط المحتملة
-        * توصية بسعر الدخول
-        * نسبة المخاطرة إلى العائد
-        
-        ### للبدء:
-        
-        استخدم القائمة الجانبية لاختيار الرمز والإطار الزمني، ثم انقر على زر "تحليل السوق".
-        """)
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Features section
-        st.subheader("المميزات الرئيسية")
-        
-        # Create three columns for features
-        col1, col2, col3 = st.columns(3)
-        
-        with col1:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown("""
-            ### تحليل متعدد الإطارات
-            
-            تحليل متزامن للإطارات الزمنية المختلفة يساعد في تأكيد الإشارات وزيادة دقة التوقعات.
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        with col2:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown("""
-            ### مؤشرات فنية متقدمة
-            
-            مجموعة من المؤشرات الفنية المتقدمة تعمل معاً لتوفير إشارات دقيقة وموثوقة.
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
-        
-        with col3:
-            st.markdown('<div class="card">', unsafe_allow_html=True)
-            st.markdown("""
-            ### تحليل أنماط الشموع
-            
-            التعرف التلقائي على أنماط الشموع اليابانية الرئيسية وتحليل دلالاتها.
-            """)
-            st.markdown('</div>', unsafe_allow_html=True)
+        # Auto-refresh logic
+        if st.session_state.auto_refresh:
+            time.sleep(1)  # Small delay to prevent excessive CPU usage
+            st.rerun()
 
 # Run the app
 if __name__ == "__main__":
